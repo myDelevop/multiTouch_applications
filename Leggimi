@@ -1,0 +1,1 @@
+Per modificare posizione e grandezza finestra dell'applicazione NON a full screen, modificare classe MTApplication, riga 473

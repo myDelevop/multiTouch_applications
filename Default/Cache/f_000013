@@ -1,0 +1,1197 @@
+/*
+Namespace: TelecomItalia
+	Telecom Italia Global Javascript
+
+File Name: global.js
+
+About: Version
+	1.0
+
+Description:
+	Global Javascript for TelecomItalia.com/it
+
+Requires:
+	jQuery 1.3.2 <http://jquery.com>
+	jquery.cookie.js
+	
+Last Modified:
+	$Date: 2009-07-14 13:53:06 -0400 (Tue, 14 Jul 2009) $
+	$Revision: 161 $
+	$LastChangedBy: mbester $
+
+*/
+
+/**
+	Declare TelecomItalia (and TI shorthand) Namespaces
+*/
+window.TelecomItalia = window.TelecomItalia || {};
+TelecomItalia.it = TelecomItalia.it || {};
+window.TI = window.TI || window.TelecomItalia; 
+
+(function(){
+	
+	/**
+		Internal Shorthand reference
+	*/
+	var $self = TelecomItalia.it,
+	
+		/**
+			Static Constants for global use 
+		*/
+		prefix = 'ti-',
+		CONSTANTS = {
+
+			// The "Active" class to use in scripts
+			CLASS_ACTIVE : prefix + "active",
+			
+			// The Focus Class for inferior browsers
+			CLASS_FOCUS : prefix + "focus",
+			
+			// A hover class to apply for older browsers
+			CLASS_HOVER : prefix + "hover"
+
+		},
+		
+		/**
+			Element references used globally
+		*/
+		$elements = {
+			document : $(document),
+			window : $(window),
+			html : $('html'),
+			body : NULL
+		},
+		
+		/**
+			Primitives
+		*/
+		TRUE = true,
+		FALSE = false,
+		NULL = null,
+		UNDEFINED;
+		
+	/**
+		Set up flags for the IEs
+	*/
+	$.extend($.browser, {
+		ie6 : !!($.browser.msie && parseInt($.browser.version, 10) === 6),
+//		ie7 : !!($.browser.msie && parseInt($.browser.version, 10) === 7 && !$.support.tbody && !$.support.style && !$.support.hrefNormalized),
+//		ie8 : !!($.browser.msie && ((parseInt($.browser.version, 10) === 8) || (parseInt($.browser.version, 10) === 7 && $.support.tbody && $.support.style && $.support.hrefNormalized)))
+		ie7 : !!($.browser.msie && parseInt($.browser.version, 10) === 7),
+		ie8 : !!($.browser.msie && ((parseInt($.browser.version, 10) === 8) || (parseInt($.browser.version, 10) === 7)))
+	});
+	
+	// Let's mitigate background image flicker in IE6
+	if ($.browser.ie6) {
+		try {
+			document.execCommand("BackgroundImageCache", false, true);
+		} catch(e){}
+	}
+	
+	
+	/**
+	 * The Global class
+	 * Initializes other common scripts and sets up some global constants.
+	 */
+	$self.Global = function(){
+
+		/**
+			An internal flag to ensure we don't initialize this object more than once.
+		*/
+		var initialized = FALSE;
+
+		return {
+
+			/**
+			 * Initializes all global functionality
+			 * @public
+			 * @returns Nothing
+			 */
+			initialize : function(){
+				if (initialized) {
+					return;
+				}
+				
+				/**
+					Grab elements now that they're availale
+				*/
+				$elements.body = $('body');
+
+				
+				$self.SearchForms.initialize();
+				$self.CollapsableFooter.initialize();
+				$self.Localization.initialize();
+				
+
+				initialized = TRUE;
+			}
+		};
+	}();
+	
+	/**
+	 *	Creates the text resize widget and cookies a users option.
+	 * 	@class
+	 */
+	$self.TextResizer = function(){
+
+		/**
+			An internal flag to ensure we don't initialize this object more than once.
+		*/
+		var initialized = FALSE,
+
+			/**
+				An object with the available sizes and the matching values in the text size CSS files.
+			*/
+			sizes = {
+				'small' : {
+					'percent' : '69.25%',
+					'pixels' : '11px'
+				},
+				'medium' : {
+					'percent' : '75%',
+					'pixels' : '12px'
+				},
+				'large' : {
+					'percent' : '87.5%',
+					'pixels' : '14px'
+				}
+			},
+
+			/**
+				Variables for use in this object
+			*/
+			vars = {
+				// The id for the resizer
+				id_element : prefix + "textResizer",
+
+				// The ID of the header
+				id_header : prefix + "header",
+
+				// The name we'll store the cookie under
+				cookie_name : prefix + "textSize"
+			},
+
+			/**
+				Element references used in this object
+			*/
+			$header = NULL,
+			$resizer = NULL,
+			
+			/**
+			 * Builds the HTML for the text resize widget
+			 * @private
+			 * @returns Nothing
+			 */
+			buildResizer = function() {
+				// Find the header
+				$header = $("#" + vars.id_header);
+				// dump out if we don't find the header, because there's nowhere else to put this
+				if ($header.length === 0) {
+					return;
+				}
+
+				// Build the structure.
+				$resizer = $('<p></p>');
+				$resizer
+					.attr('id', vars.id_element)
+					.append($self.Lang.textSize || "Text Size");
+					
+				// get the current size
+				var currentSize = ($.browser.msie) ?
+									parseInt(document.body.currentStyle['fontSize'], 10) :
+									parseInt($elements.body.css('font-size'), 10);
+
+				$.each(sizes, function(key, value){
+					var $link = $('<a></a>')
+									.attr('href', "#")
+									.text('A')
+									.css('font-size', value.pixels)
+									.data('css-file', key)
+									.data('body-size', value.percent)
+									.click(setSize)
+									.appendTo($resizer);
+									
+					if (currentSize === (($.browser.msie) ? parseInt(value.percent, 10) : parseInt(value.pixels, 10))) {
+						$link.addClass(CONSTANTS.CLASS_ACTIVE);
+					}
+				});
+
+				$resizer.appendTo($header);
+			},
+
+			/**
+			 * Sets the appropriate base text size on the body element
+			 * Writes a cookie with a users selected preference
+			 * Intended to be called from the context of one of the resize links
+			 * @private
+			 * @param {Object} e Event object
+			 * @returns nothing
+			 */
+			setSize = function(e) {
+
+				e.preventDefault();
+
+				var $this = $(this);
+
+				$this.siblings().removeClass(CONSTANTS.CLASS_ACTIVE);
+				$this.addClass(CONSTANTS.CLASS_ACTIVE);
+
+				$elements.body.css('font-size', $this.data('body-size'));
+
+				/**
+					Cookie the clicked value
+				*/
+				if (typeof $.cookie === 'function') {
+					$.cookie(vars.cookie_name, $this.data('css-file'), {
+						expires: 365,
+						path: '/'
+					});
+				}
+
+				/**
+					trigger custom event for resizing other stuff
+				*/
+				$elements.document.trigger('resize.text');
+			};
+
+		return {
+
+			/**
+			 * Sets up the collapsible footer
+			 * @public
+			 * @returns Nothing
+			 */
+			initialize : function(){
+				if (initialized) {
+					return;
+				}
+
+				buildResizer();
+
+				initialized = TRUE;
+			}
+
+		};
+
+	}();
+	
+	
+	/**
+	 * Fortifies the search forms
+	 * @class
+	 */
+	$self.SearchForms = function(){
+
+		/**
+			An internal flag to ensure we don't initialize this object more than once.
+		*/
+		var initialized = FALSE,
+
+			/**
+				Element references used in this object
+			*/
+			$forms,
+
+			fortify = function() {
+				$forms.each(function(){
+					var $this = $(this),
+						$input = $this.find('input[type=text]:first'),
+						defaultText;
+
+					if ($input.length === 0) {
+						return;
+					}
+
+					defaultText = $input.attr('title');
+
+					if (defaultText !== '') {
+						$input
+							.attr('title', '')
+							.bind('focus', function(){
+								var value = $input.val();
+								$input
+									.val((value === defaultText) ? "" : value)
+									.addClass(CONSTANTS.CLASS_FOCUS);
+							})
+							.bind('blur', function(){
+								var value = $input.val();
+								$input
+									.val((value === "") ? defaultText : value)
+									.removeClass(CONSTANTS.CLASS_FOCUS);
+							});
+
+						if ($input.val() === "") {
+							$input.val(defaultText);
+						}
+					}
+
+				});
+
+			};
+
+		return {
+
+			/**
+			 * Sets up the collapsible footer
+			 * @public
+			 * @returns Nothing
+			 */
+			initialize : function(){
+				if (initialized) {
+					return;
+				}
+
+				$forms = $("form." + prefix + "search");
+				if ($forms.length === 0) {
+					return;
+				}
+
+				fortify();
+
+				initialized = TRUE;
+			}
+
+		};
+
+	}();
+	
+	
+	/**
+	 * Sets up the dynamic banner if necessary
+	 * @class
+	 */
+	$self.DynamicBanner = function(){
+
+		/**
+			An internal flag to ensure we don't initialize this object more than once.
+		*/
+		var initialized = FALSE,
+
+			/**
+				Element references used in this object
+			*/
+			$banners;
+
+		return {
+
+			/**
+			 * Sets up any dynamic banners on the page
+			 * @public
+			 * @returns Nothing
+			 */
+			initialize : function(){
+				if (initialized || typeof $.bannerSlideshow !== 'function') {
+					return;
+				}
+
+				$banners = $("#" + prefix + "featureBanner");
+				if ($banners.length === 0) {
+					return;
+				}
+
+				$banners.bannerSlideshow();
+
+				initialized = TRUE;
+			}
+
+		};
+
+	}();
+	
+	/**
+	 * Sets up any embedded photo galleries if necessary
+	 * @class
+	 */
+	$self.PhotoGalleries = function(){
+
+		/**
+			An internal flag to ensure we don't initialize this object more than once.
+		*/
+		var initialized = FALSE,
+
+			/**
+				Element references used in this object
+			*/
+			$galleries;
+
+		return {
+
+			/**
+			 * Sets up any dynamic banners on the page
+			 * @public
+			 * @returns Nothing
+			 */
+			initialize : function(){
+				if (initialized || typeof $.photoGallery !== 'function') {
+					return;
+				}
+
+				$galleries = $("." + prefix + "photo-gallery");
+				if ($galleries.length === 0) {
+					return;
+				}
+
+				$galleries.photoGallery();
+
+				initialized = TRUE;
+			}
+
+		};
+
+	}();
+
+	/**
+	 * The Collapsible Footer functionality
+	 * @class
+	 */
+	$self.CollapsableFooter = function(){
+
+		/**
+			An internal flag to ensure we don't initialize this object more than once.
+		*/
+		var initialized = FALSE,
+
+			/**
+				Static Constants for use in this object
+			*/
+			vars = {
+				// ID of the footer
+				id_footer : prefix + 'footer',
+
+				// The class for the tab section
+				class_tab : prefix + "tab",
+
+				// The class of the collapsable section
+				class_collapsable : prefix + "collapsable",
+
+				// The class name to apply to the tab when the section is closed
+				class_closed : prefix + "closed",
+
+				// The header element selector
+				element_header : "h2",
+
+				// Speed for the animation
+				speed : 200,
+
+				// The easing to use for the animation
+				easing : "easeInOutQuart"
+			},
+
+			/**
+				Element references used in this object
+			*/
+			$collapsible,
+			$wrapper,
+			$tab,
+			$link,
+			$header,
+
+			/**
+				Flag for rembering the state.
+			*/
+			open = TRUE,
+
+			/**
+			 * Builds the HTML for the toggling tab, like so:
+			 *
+			 *  <p class="ti-tab">
+			 *  	<a href="#" [class="ti-closed"]>
+			 *  		Close
+			 *  	</a>
+			 *  </p>
+			 *  
+			 * @private
+			 * @returns Nothing
+			 */
+			buildTab = function() {
+
+				$tab = $('<p></p>')
+							.addClass(vars.class_tab);
+
+				$link = $('<a></a>')
+							.attr('href','#')
+							.text((open) ? $self.Lang.close : $self.Lang.open)
+							.bind('click', toggleState)
+							.appendTo($tab);
+
+				// Append the tab
+				$wrapper.after($tab);
+			},
+
+			/**
+				Some variables we'll need during animation
+				openHeight is the open height of the collapsible section
+				buffer is the height of the collapsible section we want to show when closed.
+			*/
+			openHeight,
+			buffer,
+
+			/**
+			 * Wraps the collapsible section in another div so we can do the animation 
+			 * as well as records a few values we'll need later.
+			 * @private
+			 * @returns Nothing
+			 */
+			wrapSection = function() {
+				$collapsible
+					.wrap('<div></div>')
+					.css({
+						'position' : 'relative'
+					});
+
+				$wrapper = $collapsible.parent();
+				$wrapper
+					.css({
+						'position' : 'relative', // <-- IE needs this
+						'overflow' : 'hidden',
+						'margin-right' : $collapsible.css('margin-right'),
+						'margin-left' : $collapsible.css('margin-left'),
+						'padding-right' : $collapsible.css('padding-right'),
+						'padding-left' : $collapsible.css('padding-left')
+					});
+
+				openHeight = parseInt($wrapper.height(), 10);
+				buffer = parseInt($collapsible.css('padding-bottom'), 10);
+			},
+
+			/**
+			 * Toggles the state of the collapsible section. Intended to be called from the context of a link.
+			 * @private
+			 * @param {Object} e An event object
+			 * @returns Nothing
+			 */
+			toggleState = function(e) {
+
+				e.preventDefault();
+
+				var bottom = FALSE;
+
+				if (open) {
+					$wrapper
+						.stop()
+						.animate({
+							'height' : buffer
+						}, {
+							'speed' : vars.speed,
+							'easing' : vars.easing,
+							'step' : (!$.browser.ie6 && !$.browser.ie7) ? function(){} : function() {
+								$tab.css('display', 'inline');
+								$tab.css('float', 'left');
+							},
+							'complete' : (!$.browser.ie6 && !$.browser.ie7) ? function(){} : function() {
+								$tab.css('display', 'inline');
+								$tab.css('float', 'left');
+							}
+						});
+
+					$collapsible
+						.stop()
+						.animate({
+							'marginTop' : -(openHeight - buffer) + "px"
+						}, {
+							'speed' : vars.speed,
+							'easing' : vars.easing
+						});
+					
+					open = FALSE;
+
+					$link
+						.text($self.Lang.open)
+						.addClass(vars.class_closed);
+
+				} else {
+
+					// Are we at the bottom of the document?
+					bottom = ($elements.document.height() === $elements.window.scrollTop() + $elements.window.height());
+
+					if (bottom) {
+						$('body,html').animate({
+							'scrollTop' : $elements.window.scrollTop() + (openHeight * 2)
+						}, vars.speed, vars.easing);
+					}	
+
+					$wrapper
+						.stop()
+						.animate({
+							'height' : openHeight
+						}, {
+							'speed' : vars.speed,
+							'easing' : vars.easing,
+							'step' : (!$.browser.ie6 && !$.browser.ie7) ? function(){} : function() {
+								$tab.css('display', 'inline');
+								$tab.css('float', 'left');
+							},
+							'complete' : (!$.browser.ie6 && !$.browser.ie7) ? function(){} : function() {
+								$tab.css('display', 'inline');
+								$tab.css('float', 'left');
+							}
+						});
+
+					$collapsible
+						.stop()
+						.animate({
+							'marginTop' : 0
+						}, {
+							'speed' : vars.speed,
+							'easing' : vars.easing
+						});
+
+
+					open = TRUE;
+
+					$link
+						.text($self.Lang.close)
+						.removeClass(vars.class_closed);
+				};
+			},
+
+
+			/**
+			 * Finds the header element in the footer and binds the open/close action to it.
+			 * @private
+			 * @returns Nothing
+			 */
+			bindHeader = function() {
+				$header = $('#' + vars.id_footer + " " + vars.element_header);
+				if ($header.length === 0) {
+					return;
+				}
+				$header
+					.css({
+						'cursor' : 'pointer'
+					})
+					.hover(
+						function() {
+							$header.addClass(CONSTANTS.CLASS_HOVER);
+						},
+						function() {
+							$header.removeClass(CONSTANTS.CLASS_HOVER);
+						}
+					)
+					.bind('click', toggleState);
+			},
+
+			/**
+			 * Recalculates relevant heights when the text resize tool is used.
+			 * bound to the custom resize.text event on the document.
+			 * @private
+			 * @returns Nothing
+			 * @type String|Object|Array|Boolean|Number
+			 */
+			resetHeights = function() {
+
+				openHeight = $collapsible.outerHeight();
+
+				if (!open) {
+					$collapsible.css({
+						'marginTop' : -(openHeight - buffer) + "px"
+					});
+				} else {
+					$wrapper.css({
+						height : openHeight
+					});
+				}
+			};
+
+		return {
+
+			/**
+			 * Sets up the collapsible footer
+			 * @public
+			 * @returns Nothing
+			 */
+			initialize : function(){
+				if (initialized) {
+					return;
+				}
+
+				/**
+					Find collapsible sections in the footer and drop out if there are none.
+				*/
+				$collapsible = $('#' + vars.id_footer + " ." + vars.class_collapsable);
+				if ($collapsible.length === 0) {
+					return;
+				}
+
+				wrapSection();
+				buildTab();
+				bindHeader();
+
+				// Recalculate dimensions when the text resize is used.
+				$elements.document.bind('resize.text', resetHeights);
+
+				initialized = TRUE;
+			}
+
+		};
+
+	}();
+
+
+	/**
+	 * Gracefully sets up a background image fade in
+	 * @class
+	 */
+	$self.BackgroundImage = function(){
+
+		/**
+			An internal flag to ensure we don't initialize this object more than once.
+		*/
+		var initialized = FALSE,
+
+			/**
+				Static Constants for use in this object
+			*/
+			vars = {
+				// Background Image loader class
+				class_loader : prefix + "background",
+
+				// Complete Class
+				class_complete : prefix + "complete",
+
+				// The fade in speed, in milliseconds
+				speed : 1500
+			},
+
+			/**
+				Element references used in this object
+			*/
+			$loader,
+
+			/**
+			 * Sets up a loader element for a big background image and triggers an XHR request for the image to simulate load.
+			 * @private
+			 * @returns nothing
+			 */
+			loadEnormousBackgroundImage = function() {
+
+				$loader = $('<div></div>').addClass(vars.class_loader);
+
+				// Preset our loading element
+				$loader.css({
+					opacity : 0
+				});
+				$elements.body.append($loader);
+
+				// Parse out the image src from our background image
+				var src = $loader.css('background-image').replace(/^url\(("|')?|("|')?\);?$/g, '') || FALSE;
+				if (!src || src === "none" || src === "") {
+					return;
+				}
+
+				// Using the <img /> load method slowed FF 3.5 to a crawl
+				// Switching to ajax. Won't work for external images, but I doubt this will be an issue.
+				$.ajax({
+					method : "GET",
+					url : src,
+					complete : callback
+				});
+			},
+
+			/**
+			 * Fades in the background image once the ajax request for it has completed successfully
+			 * @private
+			 * @returns nothing
+			 */	
+			callback = function() {		
+				if ($.browser.ie6) {
+					$loader.height($elements.window.height());
+				} else {
+					$loader.height($elements.body.height() + 4);
+				}
+
+				$loader.animate({
+					opacity: 1
+				}, vars.speed, function() {
+					// Once faded in, move the bg image to the HTML element
+					$elements.html.addClass(vars.class_complete);
+
+					// Remove superfluous elements
+					$loader.remove();
+				});
+			};
+
+		return {
+
+			/**
+			 * Sets up any dynamic banners on the page
+			 * @public
+			 * @returns Nothing
+			 */
+			initialize : function(){
+				if (initialized || typeof $.bannerSlideshow !== 'function') {
+					return;
+				}
+
+				// Run after window onload to prevent blocking other actions
+				$(window).load(function() {
+					window.setTimeout(loadEnormousBackgroundImage, 750);
+				});
+
+				initialized = TRUE;
+			}
+
+		};
+
+	}();
+
+	
+	/**
+	 * Sets up the custom scrollbars if necessary
+	 * @class
+	 */
+	$self.CustomScrollbars = function(){
+
+		/**
+			An internal flag to ensure we don't initialize this object more than once.
+		*/
+		var initialized = FALSE,
+
+			/**
+				Element references used in this object
+			*/
+			$scrollables;
+
+		return {
+
+			/**
+			 * Sets up any custom scrollbars on the page
+			 * @public
+			 * @returns Nothing
+			 */
+			initialize : function(){
+				if (initialized || typeof $.fn.jScrollPane !== 'function') {
+					return;
+				}
+
+				$scrollables = $("." + prefix + "scrollable");
+				if ($scrollables.length === 0) {
+					return;
+				}
+
+				$scrollables.jScrollPane({
+					showArrows : TRUE,
+					scrollbarWidth : 9,
+					scrollbarMargin : 5,
+					dragMinHeight : 30
+				});
+
+				initialized = TRUE;
+			}
+
+		};
+
+	}();
+
+	
+	/**
+	 * Sets up any drop shadows that need to be applied on the page
+	 * @class
+	 */
+	$self.Shadowables = function(){
+
+		/**
+			An internal flag to ensure we don't initialize this object more than once.
+		*/
+		var initialized = FALSE,
+		
+			vars = {
+				// The selectors for elements we want to apply a drop shadow to.
+				selectors : "#" + prefix + "row-feature ." + prefix + "module"
+			},
+
+			/**
+				Element references used in this object
+			*/
+			$shadowables;
+
+		return {
+
+			/**
+			 * Sets up any custom scrollbars on the page
+			 * @public
+			 * @returns Nothing
+			 */
+			initialize : function(){
+				if (initialized || $.browser.ie6 || typeof $.fn.shadow !== 'function') {
+					return;
+				}
+
+				$shadowables = $(vars.selectors);
+				if ($shadowables.length === 0) {
+					return;
+				}
+
+				$shadowables.shadow();
+
+				initialized = TRUE;
+			}
+
+		};
+
+	}();
+
+	
+	/**
+	 * Sets up the localization widget if necessary
+	 * @class
+	 */
+	$self.Localization = function(){
+
+		/**
+			An internal flag to ensure we don't initialize this object more than once.
+		*/
+		var initialized = FALSE,
+		
+			/**
+				Variables for use in this object
+			*/
+			vars = {
+				// The name we'll store the cookie under
+				cookie_name : prefix + "localization"
+			},
+
+			/**
+				Element references used in this object
+			*/
+			$localization,
+			$form,
+			$select,
+			
+			setupForm = function() {
+				$form = $localization.find('form');
+				if ($form.length === 0) {
+					return;
+				}
+				
+				$select = $form.find('select');
+				
+				// Pre-populate cookied selection
+				if ($.cookie(vars.cookie_name)) {
+					$select
+						.val($.cookie(vars.cookie_name));
+				}
+				
+				$select
+					.bind('change', cookieSelection);
+				$form
+					.bind('submit', cookieSelection);
+				
+			},
+			
+			cookieSelection = function() {
+				var value = $select.val();
+				if (value === "" || value === "#") {
+					return;
+				}
+				
+				$.cookie(vars.cookie_name, value, {
+					expires: 365,
+					path: '/'
+				});
+			};
+
+		return {
+
+			/**
+			 * Sets up any custom scrollbars on the page
+			 * @public
+			 * @returns Nothing
+			 */
+			initialize : function(){
+				if (initialized || typeof $.fn.jScrollPane !== 'function') {
+					return;
+				}
+
+				$localization = $("." + prefix + "localization");
+				if ($localization.length === 0) {
+					return;
+				}
+				
+				setupForm();
+				
+				initialized = TRUE;
+			}
+
+		};
+
+	}();
+
+	return $self;
+	
+}).call(TelecomItalia.it);
+
+
+
+
+
+
+
+/**
+ * Sets up the Debug mode
+ * @class
+ */
+var Debug = (function(){
+	
+	/**
+	 * Global flag to turn the debug mode on or off.
+	 * @private
+	 */
+	var enabled = true;
+	
+	/**
+	 * Whether or not we want to throw alerts in IE6 and 7 when debug mode is on
+	 * @private
+	 */
+	var ieAlerts = false;
+	
+	/**
+	 * Sets up a flag to see if we're using an older version of IE.
+	 * @private
+	 */
+	var oldIE = ($.browser.ie6 || $.browser.ie7);
+		
+	return {
+		
+		/**
+		 * Logs a message to the console if one is available
+		 * @public
+		 * @param {String|Object|Array|Boolean|Number} thing Any content you want displayed in the console.
+		 * @returns nothing
+		 */
+		log : function(thing) {
+			if (enabled) {
+				try {
+					console.log.apply(console, arguments);
+				} catch (e) {
+					if (oldIE && ieAlerts) {
+						alert ('LOG: ' + arguments);
+					}
+				}
+			}
+		},		
+		/**
+		 * Logs an error message to the console if one is available
+		 * @public
+		 * @param {String|Object|Array|Boolean|Number} thing Any content you want displayed in the console.
+		 * @returns nothing
+		 */
+		error : function(thing) {
+			if (enabled) {
+				try {
+					console.error.apply(console, arguments);
+				} catch (e) {
+					if (oldIE && ieAlerts) {
+						alert ('ERROR: ' + thing);
+					}
+				}
+			}
+		},
+				
+		/**
+		 * Displays all the properties of something in the console if one is available
+		 * @public
+		 * @param {String|Object|Array|Boolean|Number} thing Any content you want displayed all the properties of in the console.
+		 * @returns nothing
+		 */
+		dir : function(thing) {
+			if (enabled) {
+				try {
+					console.dir.apply(console, arguments);
+				} catch (e) {
+					if (oldIE && ieAlerts) {
+						alert ('DIR: ' + arguments);
+					}
+				}
+			}
+		},
+		
+		/**
+		 * Logs an informational message to the console if one is available
+		 * @public
+		 * @param {String|Object|Array|Boolean|Number} thing Any content you want displayed all the properties of in the console.
+		 * @returns nothing
+		 */
+		info : function(thing) {
+			if (enabled) {
+				try {
+					console.info.apply(console, arguments);
+				} catch (e) {
+					if (oldIE && ieAlerts) {
+						alert ('INFO: ' + arguments);
+					}
+				}
+			}
+		}
+	};
+	
+}());
+
+
+/**
+	Fire up the global initialization.
+*/
+$(document).ready(TelecomItalia.it.Global.initialize);
+
+
+/**
+	Caricamento delle immagini all'onload della pagina
+*/
+$(function() {preload();});
+
+function preload(){
+ if (document.images){
+   pic1= new Image(); 
+   pic1.src="/sites/all/themes/ti_bo/img/box-red-btn2.png"; 
+ 
+   pic2= new Image(); 
+   pic2.src="/sites/all/themes/ti_bo/img/box-grey-btn2.png"; 
+ 
+   pic3= new Image(); 
+   pic3.src="/sites/all/themes/ti_bo/img/acquista-h.png"; 
+ 
+   pic4= new Image(); 
+   pic4.src="/sites/all/themes/ti_bo/img/buy-link2-h.png"; 
+ 
+   pic5= new Image(); 
+   pic5.src="/sites/all/themes/ti_bo/img/buy-link-h.png"; 
+ 
+   pic6= new Image(); 
+   pic6.src="/sites/all/themes/ti_bo/img/btn-box-red00.png"; 
+ 
+   pic7= new Image(); 
+   pic7.src="/sites/all/themes/ti_bo/img/btn-box-red01.png"; 
+ 
+   pic8= new Image(); 
+   pic8.src="/sites/all/themes/ti_bo/img/btn-box-red02.png"; 
+ }
+}
+
+
+/**
+ * Implementare l'hover sul menù in IE6 (gli elementi LI, etc.) 
+*/
+$(document).ready(function() {
+  // Se browser è IE6.
+  if($.browser.msie && ($.browser.version.substr(0,1) *1) < 7 && ($.browser.version.substr(0,1) *1) >= 6) {
+	$("#ti-nav > li").each(function() {
+	  $(this).hover(function() {
+    	$(this).addClass('hover-ie6');
+    	$(this).children().addClass('hover-ie6');
+      },
+      function() {
+    	$(this).removeClass('hover-ie6');
+    	$(this).children().removeClass('hover-ie6');
+      });
+    });
+	
+	// Wizard sul /internet
+	$(".wz-block", "#wizard-container_0").each(function() {
+		$(this).hover(function() {
+			$(this).addClass('hover-ie6');
+		}, function() {
+			$(this).removeClass('hover-ie6');
+		});
+	});	
+  }
+});

@@ -1,0 +1,3 @@
+clientID=86e24091b4f142fc9fb39c8d06ad4e30
+clientSecret=5d24aa41b2464e20a2254a057baeeae8
+webSiteURL=http://localhost

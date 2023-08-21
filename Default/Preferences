@@ -1,0 +1,30 @@
+{
+   "download": {
+      "directory_upgrade": true
+   },
+   "extensions": {
+      "autoupdate": {
+         "next_check": "13097098406670139"
+      }
+   },
+   "ntp": {
+      "pref_version": 1,
+      "shown_sections": 29,
+      "tips_cache": {
+         "current_tip": 0,
+         "topic_id": "24013"
+      },
+      "tips_cache_update": "1300197061.216654",
+      "tips_server": "https://clients2.google.com/tools/service/npredir?r=chrometips_win&hl=en-US"
+   },
+   "profile": {
+      "exited_cleanly": true,
+      "per_host_zoom_levels": {
+         "portal.acm.org": -10,
+         "www.prova-unternehmensberatung.de": 26
+      }
+   },
+   "safebrowsing": {
+      "enabled": false
+   }
+}

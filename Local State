@@ -1,0 +1,56 @@
+{
+   "": "",
+   "StartupDNSPrefetchList": [ "clients2.google.com", "www.google.com" ],
+   "intl": {
+      "app_locale": "en-US"
+   },
+   "protocol_handler": {
+      "excluded_schemes": {
+         "afp": true,
+         "data": true,
+         "disk": true,
+         "disks": true,
+         "file": true,
+         "hcp": true,
+         "javascript": true,
+         "mailto": false,
+         "ms-help": true,
+         "news": false,
+         "nntp": true,
+         "shell": true,
+         "snews": false,
+         "vbscript": true,
+         "view-source": true,
+         "vnd": {
+            "ms": {
+               "radio": true
+            }
+         }
+      }
+   },
+   "uninstall_metrics": {
+      "launch_count": "34",
+      "uptime_sec": "88"
+   },
+   "user_experience_metrics": {
+      "session_id": 33,
+      "stability": {
+         "breakpad_registration_fail": 0,
+         "breakpad_registration_ok": 0,
+         "crash_count": 0,
+         "debugger_not_present": 0,
+         "debugger_present": 0,
+         "exited_cleanly": true,
+         "incomplete_session_end_count": 0,
+         "last_timestamp_sec": "1452624258",
+         "launch_count": 34,
+         "launch_time_sec": "1452624258",
+         "page_load_count": 0,
+         "renderer_crash_count": 0,
+         "renderer_hang_count": 0,
+         "session_end_completed": true,
+         "stats_buildtime": "1289687394",
+         "stats_version": "1, 6, 0, 3-devel"
+      }
+   }
+}

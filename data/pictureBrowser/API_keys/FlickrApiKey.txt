@@ -1,0 +1,2 @@
+FlickrApiKey=fd83a19b114f8f4c738de3f1524b3513
+FlickrSecret=d6cccf27ba5a1130

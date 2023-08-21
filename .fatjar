@@ -1,0 +1,14 @@
+#Fat Jar Configuration File
+#Mon Aug 29 17:07:27 CEST 2016
+onejar.license.required=true
+manifest.classpath=
+manifest.removesigners=true
+onejar.checkbox=false
+jarname=mt4j_wwf_fat.jar
+manifest.mergeall=true
+manifest.mainclass=wwf.thermometer.StartThermometer
+manifest.file=<createnew>
+jarname.isextern=false
+onejar.expand=
+excludes=
+includes=

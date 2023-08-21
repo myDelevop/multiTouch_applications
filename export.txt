@@ -1,0 +1,5 @@
+C:\Users\peppe\Documents\workspace WWF\MT4J_wwf\src\examples\data\01.png
+C:\Users\peppe\Documents\workspace WWF\MT4J_wwf\src\examples\data\02.png
+C:\Users\peppe\Documents\workspace WWF\MT4J_wwf\src\examples\data\03.png
+C:\Users\peppe\Documents\workspace WWF\MT4J_wwf\src\examples\data\04.png
+C:\Users\peppe\Documents\workspace WWF\MT4J_wwf\src\examples\data\05.png

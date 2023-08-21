@@ -1,0 +1,10 @@
+QUESTIONSCENE:
+
+- La barra laterale occupa 1/5 dello schermo in larghezza
+
+- in 'currentPlayerPane' vengono visualizzate informazioni riguardo al giocatore attuale e occupa 4/11 in altezza
+	>> di questi 4/11: 2/7 dello spazio sono destinati al nome del giocatore ('currentRoundSubPane'),
+	   4/7 all'avatar ('currentPlayerAvatar') e e 1/7 allo score ('currentScoreSubPane')
+
+
+	
